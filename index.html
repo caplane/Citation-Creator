@@ -269,6 +269,18 @@
             color: #333;
             margin-bottom: 15px;
         }
+
+        .debug-info {
+            background: #fff9e6;
+            border: 1px solid #ffcc00;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -338,6 +350,9 @@
                 Select a book from search results or enter manually to generate a citation.
             </div>
             <button class="copy-btn" onclick="copyCitation()" id="copyBtn">📋 Copy Citation</button>
+            
+            <!-- Debug info (can be removed later) -->
+            <div id="debugInfo" class="debug-info hidden"></div>
         </div>
     </div>
     
@@ -358,8 +373,8 @@
             document.getElementById('errorMessage').classList.add('hidden');
             
             try {
-                // Use Open Library API
-                const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5`);
+                // Use Open Library API with fields parameter to get more edition data
+                const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,publisher,publish_place,publish_year,publish_date,edition_key,isbn,language&limit=5`);
                 
                 if (!response.ok) {
                     throw new Error('API request failed');
@@ -429,39 +444,22 @@
             outputBox.innerHTML = 'Fetching complete bibliographic data...';
             outputBox.classList.add('empty');
             
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.innerHTML = 'Searching for detailed information...';
+            debugDiv.classList.remove('hidden');
+            
             try {
-                // Get the edition key - try to find the best edition
-                let editionKey = null;
+                selectedBook = await fetchCompleteBookData(doc);
                 
-                // First, try to get an edition key from the search result
-                if (doc.edition_key && doc.edition_key.length > 0) {
-                    editionKey = doc.edition_key[0];
-                }
-                
-                // If we have an edition key, fetch the full edition details
-                if (editionKey) {
-                    const editionResponse = await fetch(`https://openlibrary.org/books/${editionKey}.json`);
-                    
-                    if (editionResponse.ok) {
-                        const editionData = await editionResponse.json();
-                        
-                        // Extract complete information
-                        selectedBook = {
-                            author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
-                            title: editionData.title || doc.title || 'Unknown Title',
-                            publisher: editionData.publishers && editionData.publishers.length > 0 ? editionData.publishers[0] : '',
-                            place: editionData.publish_places && editionData.publish_places.length > 0 ? editionData.publish_places[0] : '',
-                            year: editionData.publish_date || (doc.first_publish_year ? doc.first_publish_year.toString() : ''),
-                            pages: ''
-                        };
-                    } else {
-                        // Fallback to search data
-                        selectedBook = createBookFromSearchData(doc);
-                    }
-                } else {
-                    // No edition key, use search data
-                    selectedBook = createBookFromSearchData(doc);
-                }
+                // Debug: show what we found
+                debugDiv.innerHTML = `
+                    <strong>Found data:</strong><br>
+                    Author: ${selectedBook.author}<br>
+                    Title: ${selectedBook.title}<br>
+                    Publisher: ${selectedBook.publisher || 'Not found'}<br>
+                    Place: ${selectedBook.place || 'Not found'}<br>
+                    Year: ${selectedBook.year || 'Not found'}
+                `;
                 
                 // Clear any errors
                 document.getElementById('errorMessage').classList.add('hidden');
@@ -473,11 +471,82 @@
                 document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 
             } catch (error) {
-                console.error('Error fetching edition details:', error);
-                // Fallback to search data
+                console.error('Error fetching book details:', error);
+                debugDiv.innerHTML = 'Error: ' + error.message;
                 selectedBook = createBookFromSearchData(doc);
                 updateCitation();
             }
+        }
+        
+        async function fetchCompleteBookData(doc) {
+            let bookData = {
+                author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
+                title: doc.title || 'Unknown Title',
+                publisher: '',
+                place: '',
+                year: '',
+                pages: ''
+            };
+            
+            // Strategy 1: Try to get data from the first edition
+            if (doc.edition_key && doc.edition_key.length > 0) {
+                try {
+                    // Try the first few editions to find one with complete data
+                    for (let i = 0; i < Math.min(3, doc.edition_key.length); i++) {
+                        const editionKey = doc.edition_key[i];
+                        const editionResponse = await fetch(`https://openlibrary.org/books/${editionKey}.json`);
+                        
+                        if (editionResponse.ok) {
+                            const editionData = await editionResponse.json();
+                            
+                            console.log('Edition data:', editionData);
+                            
+                            // Update book data if we found better information
+                            if (editionData.title) {
+                                bookData.title = editionData.title;
+                            }
+                            
+                            if (editionData.publishers && editionData.publishers.length > 0) {
+                                bookData.publisher = editionData.publishers[0];
+                            }
+                            
+                            if (editionData.publish_places && editionData.publish_places.length > 0) {
+                                bookData.place = editionData.publish_places[0];
+                            }
+                            
+                            if (editionData.publish_date) {
+                                bookData.year = editionData.publish_date;
+                            }
+                            
+                            // If we found publisher and place, we can stop
+                            if (bookData.publisher && bookData.place) {
+                                break;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching edition details:', error);
+                }
+            }
+            
+            // Strategy 2: Use data from the search result if we didn't get it from editions
+            if (!bookData.publisher && doc.publisher && doc.publisher.length > 0) {
+                bookData.publisher = doc.publisher[0];
+            }
+            
+            if (!bookData.place && doc.publish_place && doc.publish_place.length > 0) {
+                bookData.place = doc.publish_place[0];
+            }
+            
+            if (!bookData.year) {
+                if (doc.publish_year && doc.publish_year.length > 0) {
+                    bookData.year = doc.publish_year[0].toString();
+                } else if (doc.first_publish_year) {
+                    bookData.year = doc.first_publish_year.toString();
+                }
+            }
+            
+            return bookData;
         }
         
         function createBookFromSearchData(doc) {
@@ -515,6 +584,13 @@
             };
             
             document.getElementById('errorMessage').classList.add('hidden');
+            
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.innerHTML = `
+                <strong>Manual entry:</strong><br>
+                All data entered manually by user
+            `;
+            debugDiv.classList.remove('hidden');
             
             // Update citation
             updateCitation();
