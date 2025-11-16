@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -205,6 +206,14 @@
             font-family: 'Georgia', serif;
             line-height: 1.8;
             font-size: 1em;
+            min-height: 60px;
+        }
+
+        .citation-output.empty {
+            background: #f5f5f5;
+            border-left: 4px solid #999;
+            color: #666;
+            font-style: italic;
         }
         
         .copy-btn {
@@ -249,6 +258,17 @@
         .hidden {
             display: none;
         }
+
+        .format-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .format-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -261,7 +281,7 @@
             <ul>
                 <li>Enter author and partial title (e.g., "Eric Caplan Mind")</li>
                 <li>We'll search for complete bibliographic information</li>
-                <li>Select the correct work from search results</li>
+                <li>Select the correct work from search results OR enter manually</li>
                 <li>Choose your citation format and copy!</li>
             </ul>
         </div>
@@ -296,8 +316,13 @@
             <h3>Select the correct work:</h3>
             <div id="resultsContainer"></div>
         </div>
+
+        <div id="errorMessage" class="error hidden"></div>
         
-        <div id="formatSection" class="hidden">
+        <!-- FORMAT SECTION - Now always visible -->
+        <div class="format-section">
+            <h3>📝 Citation Format & Output</h3>
+            
             <div class="input-section">
                 <label for="formatSelect">Select Citation Format:</label>
                 <select id="formatSelect" onchange="updateCitation()">
@@ -309,11 +334,11 @@
                 </select>
             </div>
             
-            <div id="citationOutput" class="citation-output"></div>
-            <button class="copy-btn" onclick="copyCitation()">📋 Copy Citation</button>
+            <div id="citationOutput" class="citation-output empty">
+                Select a book from search results or enter manually to generate a citation.
+            </div>
+            <button class="copy-btn" onclick="copyCitation()" id="copyBtn">📋 Copy Citation</button>
         </div>
-        
-        <div id="errorMessage" class="error hidden"></div>
     </div>
     
     <script>
@@ -330,7 +355,6 @@
             // Show loading
             document.getElementById('loadingIndicator').classList.remove('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('formatSection').classList.add('hidden');
             document.getElementById('errorMessage').classList.add('hidden');
             
             try {
@@ -406,11 +430,14 @@
                 pages: ''
             };
             
-            document.getElementById('formatSection').classList.remove('hidden');
+            // Clear any errors
+            document.getElementById('errorMessage').classList.add('hidden');
+            
+            // Update citation immediately
             updateCitation();
             
-            // Scroll to format section
-            document.getElementById('formatSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Scroll to citation output
+            document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
         function toggleManualEntry() {
@@ -436,39 +463,54 @@
                 pages: document.getElementById('manualPages').value.trim()
             };
             
-            document.getElementById('formatSection').classList.remove('hidden');
             document.getElementById('errorMessage').classList.add('hidden');
+            
+            // Update citation
             updateCitation();
             
-            // Scroll to results
-            document.getElementById('formatSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Scroll to citation output
+            document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
         function updateCitation() {
-            if (!selectedBook) return;
+            if (!selectedBook) {
+                const outputBox = document.getElementById('citationOutput');
+                outputBox.innerHTML = 'Select a book from search results or enter manually to generate a citation.';
+                outputBox.classList.add('empty');
+                return;
+            }
             
             const format = document.getElementById('formatSelect').value;
             let citation = '';
             
-            switch(format) {
-                case 'chicago':
-                    citation = formatChicago(selectedBook);
-                    break;
-                case 'mla':
-                    citation = formatMLA(selectedBook);
-                    break;
-                case 'apa':
-                    citation = formatAPA(selectedBook);
-                    break;
-                case 'bluebook':
-                    citation = formatBluebook(selectedBook);
-                    break;
-                case 'turabian':
-                    citation = formatTurabian(selectedBook);
-                    break;
+            try {
+                switch(format) {
+                    case 'chicago':
+                        citation = formatChicago(selectedBook);
+                        break;
+                    case 'mla':
+                        citation = formatMLA(selectedBook);
+                        break;
+                    case 'apa':
+                        citation = formatAPA(selectedBook);
+                        break;
+                    case 'bluebook':
+                        citation = formatBluebook(selectedBook);
+                        break;
+                    case 'turabian':
+                        citation = formatTurabian(selectedBook);
+                        break;
+                    default:
+                        citation = formatChicago(selectedBook);
+                }
+                
+                const outputBox = document.getElementById('citationOutput');
+                outputBox.innerHTML = citation;
+                outputBox.classList.remove('empty');
+            } catch (error) {
+                console.error('Citation generation error:', error);
+                showError('Error generating citation. Please check your input.');
             }
-            
-            document.getElementById('citationOutput').innerHTML = citation;
         }
         
         function formatChicago(book) {
@@ -539,7 +581,11 @@
         }
         
         function formatBluebook(book) {
-            let citation = book.author + ', ' + book.title.toUpperCase();
+            let citation = book.author + ', ';
+            
+            // Bluebook uses small caps for titles (we'll use uppercase as HTML approximation)
+            citation += book.title.toUpperCase();
+            
             if (book.pages) citation += ' ' + book.pages;
             
             if (book.publisher || book.year) {
@@ -555,22 +601,44 @@
         }
         
         function formatTurabian(book) {
+            // Turabian is very similar to Chicago
             return formatChicago(book);
         }
         
         function copyCitation() {
             const outputBox = document.getElementById('citationOutput');
+            
+            if (!selectedBook || outputBox.classList.contains('empty')) {
+                showError('Please select or enter a book first to generate a citation.');
+                return;
+            }
+            
+            // Get text without HTML tags
             const text = outputBox.innerText;
             
             navigator.clipboard.writeText(text).then(() => {
-                const btn = event.target;
+                const btn = document.getElementById('copyBtn');
                 const originalText = btn.textContent;
                 btn.textContent = '✓ Copied to Clipboard!';
+                btn.style.background = '#218838';
                 setTimeout(() => {
                     btn.textContent = originalText;
+                    btn.style.background = '';
                 }, 2000);
             }).catch(err => {
-                alert('Failed to copy. Please select and copy manually.');
+                console.error('Copy failed:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Citation copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy. Please select and copy manually.');
+                }
+                document.body.removeChild(textArea);
             });
         }
         
@@ -578,6 +646,9 @@
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.classList.remove('hidden');
+            
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
         // Allow Enter key to search
