@@ -1,1 +1,591 @@
-<!DOCTYPE html> <html> <head> <title>Citation Creator</title> <style> *{margin:0;padding:0;box-sizing:border-box} body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px} .container{max-width:1200px;margin:0 auto} header{text-align:center;color:white;margin-bottom:40px} h1{font-size:3em} .card{background:white;border-radius:20px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.3)} .input-group{margin-bottom:20px} label{display:block;margin-bottom:8px;font-weight:600} input,select{width:100%;padding:12px;border:2px solid #ddd;border-radius:8px} .btn{background:#667eea;color:white;border:none;padding:15px;border-radius:8px;width:100%;cursor:pointer;font-size:1.1em} .citation-box{background:#f8f9fa;border-left:4px solid #667eea;padding:20px;margin:20px 0;border-radius:8px} .citation-text{background:white;padding:15px;border-radius:5px;position:relative} .copy-btn{position:absolute;top:10px;right:10px;background:#667eea;color:white;border:none;padding:8px 15px;border-radius:5px;cursor:pointer} .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px} </style> </head> <body> <div class="container"> <header><h1>📚 Citation Creator</h1><p>Generate academic citations</p></header> <div class="card"> <div class="input-group"><label>Type</label> <select id="pub-type" onchange="toggleFields()"><option value="article">Journal Article</option><option value="book">Book</option></select></div> <div class="input-group"><label>Author(s)</label><input id="authors" placeholder="David A. Hollinger"></div> <div class="input-group"><label>Title</label><input id="title"></div> <div id="article-fields"> <div class="input-group"><label>Journal</label><input id="journal"></div> <div class="row"> <div class="input-group"><label>Volume</label><input id="volume"></div> <div class="input-group"><label>Issue</label><input id="issue"></div> <div class="input-group"><label>Year</label><input id="year"></div> </div> <div class="input-group"><label>Pages</label><input id="pages"></div> </div> <div id="book-fields" style="display:none"> <div class="row"> <div class="input-group"><label>Publisher</label><input id="publisher"></div> <div class="input-group"><label>Place</label><input id="place"></div> <div class="input-group"><label>Year</label><input id="year-book"></div> </div></div> <div class="input-group"><label>Page Number (Optional)</label><input id="page-number"></div> <button onclick="generateCitations()" class="btn">Generate Citations</button> <div id="results"></div> </div></div> <script> function toggleFields(){const t=document.getElementById('pub-type').value;document.getElementById('article-fields').style.display=t==='article'?'block':'none';document.getElementById('book-fields').style.display=t==='book'?'block':'none'} async function generateCitations(){const t=document.getElementById('pub-type').value;const a=document.getElementById('authors').value.split(';').map(x=>x.trim());const title=document.getElementById('title').value;const p=document.getElementById('page-number').value;const d={type:t,authors:a,title:title,page_number:p};if(t==='article'){d.journal=document.getElementById('journal').value;d.volume=document.getElementById('volume').value;d.issue=document.getElementById('issue').value;d.pages=document.getElementById('pages').value;d.year=document.getElementById('year').value}else{d.publisher=document.getElementById('publisher').value;d.place=document.getElementById('place').value;d.year=document.getElementById('year-book').value}const r=await fetch('/api/manual-entry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});const res=await r.json();displayCitations(res.citations)} function displayCitations(c){let h='';const f={'chicago_note':'Chicago (Notes)','chicago_short':'Chicago (Short)','mla_note':'MLA','apa':'APA','bluebook':'Bluebook'};for(const[k,n]of Object.entries(f)){h+='<div class="citation-box"><h3>'+n+'</h3><div class="citation-text"><button class="copy-btn" onclick="copyCitation(this)">Copy</button>'+c[k]+'</div></div>'}document.getElementById('results').innerHTML=h} function copyCitation(b){const t=b.parentElement.textContent.replace('Copy','').trim();const d=document.createElement('div');d.innerHTML=t;navigator.clipboard.writeText(d.textContent);b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',2000)} </script> </body> </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Citation Generator</title>
+    <meta name="description" content="Enter minimal information and get complete, formatted citations in Chicago, MLA, APA, and more.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .input-section {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .manual-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .result-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .result-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        .result-card.selected {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+        
+        .result-meta {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .manual-entry {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .manual-entry h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .manual-entry input {
+            margin-bottom: 10px;
+        }
+        
+        .citation-output {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            font-size: 1em;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .copy-btn:hover {
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        
+        .examples {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        
+        .examples h3 {
+            color: #1565C0;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .examples ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Smart Citation Generator</h1>
+        <p class="subtitle">Enter author and title to get complete, formatted citations</p>
+        
+        <div class="examples">
+            <h3>How it works:</h3>
+            <ul>
+                <li>Enter author and partial title (e.g., "Eric Caplan Mind")</li>
+                <li>We'll search for complete bibliographic information</li>
+                <li>Select the correct work from search results</li>
+                <li>Choose your citation format and copy!</li>
+            </ul>
+        </div>
+        
+        <div class="input-section">
+            <label for="searchInput">Enter Author and/or Title:</label>
+            <input type="text" id="searchInput" placeholder="e.g., Eric Caplan Mind Games" />
+        </div>
+        
+        <div class="button-group">
+            <button onclick="searchBooks()">🔍 Search for Book</button>
+            <button class="manual-btn" onclick="toggleManualEntry()">✏️ Enter Manually</button>
+        </div>
+        
+        <div id="manualEntry" class="manual-entry hidden">
+            <h3>Manual Entry</h3>
+            <input type="text" id="manualAuthor" placeholder="Author (e.g., Eric Caplan)" />
+            <input type="text" id="manualTitle" placeholder="Full Title" />
+            <input type="text" id="manualPlace" placeholder="Place (e.g., Berkeley)" />
+            <input type="text" id="manualPublisher" placeholder="Publisher (e.g., University of California Press)" />
+            <input type="text" id="manualYear" placeholder="Year (e.g., 1998)" />
+            <input type="text" id="manualPages" placeholder="Page number(s) (optional)" />
+            <button onclick="useManualEntry()">Generate Citation</button>
+        </div>
+        
+        <div id="loadingIndicator" class="hidden">
+            <div class="spinner"></div>
+            <div class="loading">Searching for bibliographic information...</div>
+        </div>
+        
+        <div id="resultsSection" class="results-section hidden">
+            <h3>Select the correct work:</h3>
+            <div id="resultsContainer"></div>
+        </div>
+        
+        <div id="formatSection" class="hidden">
+            <div class="input-section">
+                <label for="formatSelect">Select Citation Format:</label>
+                <select id="formatSelect" onchange="updateCitation()">
+                    <option value="chicago">Chicago Manual of Style</option>
+                    <option value="mla">MLA Format</option>
+                    <option value="apa">APA Style</option>
+                    <option value="bluebook">Bluebook Legal</option>
+                    <option value="turabian">Turabian</option>
+                </select>
+            </div>
+            
+            <div id="citationOutput" class="citation-output"></div>
+            <button class="copy-btn" onclick="copyCitation()">📋 Copy Citation</button>
+        </div>
+        
+        <div id="errorMessage" class="error hidden"></div>
+    </div>
+    
+    <script>
+        let selectedBook = null;
+        
+        async function searchBooks() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (!query) {
+                showError('Please enter a search term');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('formatSection').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            
+            try {
+                // Use Open Library API
+                const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5`);
+                
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                
+                const data = await response.json();
+                
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                
+                if (!data.docs || data.docs.length === 0) {
+                    showError('No results found. Try different search terms or use Manual Entry.');
+                    return;
+                }
+                
+                displayResults(data.docs);
+            } catch (error) {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                showError('Search failed. Please try Manual Entry or check your connection.');
+                console.error('Search error:', error);
+            }
+        }
+        
+        function displayResults(docs) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+            
+            docs.forEach((doc, index) => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.onclick = () => selectBook(doc, card);
+                
+                let authors = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
+                let title = doc.title || 'Unknown Title';
+                let publisher = doc.publisher ? doc.publisher[0] : 'Unknown Publisher';
+                let year = doc.first_publish_year || 'Unknown Year';
+                let place = doc.publish_place ? doc.publish_place[0] : '';
+                
+                card.innerHTML = `
+                    <div class="result-title">${title}</div>
+                    <div class="result-meta">
+                        <strong>Author:</strong> ${authors}<br>
+                        <strong>Publisher:</strong> ${publisher}${place ? ' (' + place + ')' : ''}<br>
+                        <strong>Year:</strong> ${year}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            document.getElementById('resultsSection').classList.remove('hidden');
+        }
+        
+        function selectBook(doc, cardElement) {
+            // Remove previous selection
+            document.querySelectorAll('.result-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Mark as selected
+            cardElement.classList.add('selected');
+            
+            selectedBook = {
+                author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
+                title: doc.title || 'Unknown Title',
+                publisher: doc.publisher ? doc.publisher[0] : '',
+                place: doc.publish_place ? doc.publish_place[0] : '',
+                year: doc.first_publish_year ? doc.first_publish_year.toString() : '',
+                pages: ''
+            };
+            
+            document.getElementById('formatSection').classList.remove('hidden');
+            updateCitation();
+            
+            // Scroll to format section
+            document.getElementById('formatSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function toggleManualEntry() {
+            const manualEntry = document.getElementById('manualEntry');
+            manualEntry.classList.toggle('hidden');
+        }
+        
+        function useManualEntry() {
+            const author = document.getElementById('manualAuthor').value.trim();
+            const title = document.getElementById('manualTitle').value.trim();
+            
+            if (!author || !title) {
+                showError('Please enter at least Author and Title');
+                return;
+            }
+            
+            selectedBook = {
+                author: author,
+                title: title,
+                place: document.getElementById('manualPlace').value.trim(),
+                publisher: document.getElementById('manualPublisher').value.trim(),
+                year: document.getElementById('manualYear').value.trim(),
+                pages: document.getElementById('manualPages').value.trim()
+            };
+            
+            document.getElementById('formatSection').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            updateCitation();
+            
+            // Scroll to results
+            document.getElementById('formatSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function updateCitation() {
+            if (!selectedBook) return;
+            
+            const format = document.getElementById('formatSelect').value;
+            let citation = '';
+            
+            switch(format) {
+                case 'chicago':
+                    citation = formatChicago(selectedBook);
+                    break;
+                case 'mla':
+                    citation = formatMLA(selectedBook);
+                    break;
+                case 'apa':
+                    citation = formatAPA(selectedBook);
+                    break;
+                case 'bluebook':
+                    citation = formatBluebook(selectedBook);
+                    break;
+                case 'turabian':
+                    citation = formatTurabian(selectedBook);
+                    break;
+            }
+            
+            document.getElementById('citationOutput').innerHTML = citation;
+        }
+        
+        function formatChicago(book) {
+            let citation = book.author + ', <em>' + book.title + '</em>';
+            
+            if (book.place || book.publisher || book.year) {
+                citation += ' (';
+                if (book.place) {
+                    citation += book.place;
+                    if (book.publisher || book.year) citation += ': ';
+                }
+                if (book.publisher) {
+                    citation += book.publisher;
+                    if (book.year) citation += ', ';
+                }
+                if (book.year) citation += book.year;
+                citation += ')';
+            }
+            
+            if (book.pages) citation += ', ' + book.pages;
+            citation += '.';
+            return citation;
+        }
+        
+        function formatMLA(book) {
+            const authorParts = book.author.split(' ');
+            let citation = '';
+            
+            if (authorParts.length >= 2) {
+                citation = authorParts[authorParts.length - 1] + ', ' + authorParts.slice(0, -1).join(' ');
+            } else {
+                citation = book.author;
+            }
+            
+            citation += '. <em>' + book.title + '</em>';
+            if (book.publisher) citation += '. ' + book.publisher;
+            if (book.year) citation += ', ' + book.year;
+            if (book.pages) citation += ', pp. ' + book.pages;
+            citation += '.';
+            return citation;
+        }
+        
+        function formatAPA(book) {
+            const authorParts = book.author.split(' ');
+            let citation = '';
+            
+            if (authorParts.length >= 2) {
+                citation = authorParts[authorParts.length - 1] + ', ';
+                for (let i = 0; i < authorParts.length - 1; i++) {
+                    citation += authorParts[i].charAt(0) + '. ';
+                }
+            } else {
+                citation = book.author;
+            }
+            
+            if (book.year) citation += '(' + book.year + '). ';
+            citation += '<em>' + book.title + '</em>';
+            
+            if (book.place && book.publisher) {
+                citation += '. ' + book.place + ': ' + book.publisher;
+            } else if (book.publisher) {
+                citation += '. ' + book.publisher;
+            }
+            
+            if (book.pages) citation += ', pp. ' + book.pages;
+            citation += '.';
+            return citation;
+        }
+        
+        function formatBluebook(book) {
+            let citation = book.author + ', ' + book.title.toUpperCase();
+            if (book.pages) citation += ' ' + book.pages;
+            
+            if (book.publisher || book.year) {
+                citation += ' (';
+                if (book.publisher) citation += book.publisher;
+                if (book.publisher && book.year) citation += ' ';
+                if (book.year) citation += book.year;
+                citation += ')';
+            }
+            
+            citation += '.';
+            return citation;
+        }
+        
+        function formatTurabian(book) {
+            return formatChicago(book);
+        }
+        
+        function copyCitation() {
+            const outputBox = document.getElementById('citationOutput');
+            const text = outputBox.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied to Clipboard!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy. Please select and copy manually.');
+            });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+        
+        // Allow Enter key to search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchBooks();
+            }
+        });
+    </script>
+</body>
+</html>
