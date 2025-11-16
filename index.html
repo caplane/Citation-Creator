@@ -406,13 +406,16 @@
                     </div>
                 `;
                 
+                // Store the doc data for later retrieval
+                card.dataset.docData = JSON.stringify(doc);
+                
                 container.appendChild(card);
             });
             
             document.getElementById('resultsSection').classList.remove('hidden');
         }
         
-        function selectBook(doc, cardElement) {
+        async function selectBook(doc, cardElement) {
             // Remove previous selection
             document.querySelectorAll('.result-card').forEach(card => {
                 card.classList.remove('selected');
@@ -421,7 +424,64 @@
             // Mark as selected
             cardElement.classList.add('selected');
             
-            selectedBook = {
+            // Show loading while we fetch complete details
+            const outputBox = document.getElementById('citationOutput');
+            outputBox.innerHTML = 'Fetching complete bibliographic data...';
+            outputBox.classList.add('empty');
+            
+            try {
+                // Get the edition key - try to find the best edition
+                let editionKey = null;
+                
+                // First, try to get an edition key from the search result
+                if (doc.edition_key && doc.edition_key.length > 0) {
+                    editionKey = doc.edition_key[0];
+                }
+                
+                // If we have an edition key, fetch the full edition details
+                if (editionKey) {
+                    const editionResponse = await fetch(`https://openlibrary.org/books/${editionKey}.json`);
+                    
+                    if (editionResponse.ok) {
+                        const editionData = await editionResponse.json();
+                        
+                        // Extract complete information
+                        selectedBook = {
+                            author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
+                            title: editionData.title || doc.title || 'Unknown Title',
+                            publisher: editionData.publishers && editionData.publishers.length > 0 ? editionData.publishers[0] : '',
+                            place: editionData.publish_places && editionData.publish_places.length > 0 ? editionData.publish_places[0] : '',
+                            year: editionData.publish_date || (doc.first_publish_year ? doc.first_publish_year.toString() : ''),
+                            pages: ''
+                        };
+                    } else {
+                        // Fallback to search data
+                        selectedBook = createBookFromSearchData(doc);
+                    }
+                } else {
+                    // No edition key, use search data
+                    selectedBook = createBookFromSearchData(doc);
+                }
+                
+                // Clear any errors
+                document.getElementById('errorMessage').classList.add('hidden');
+                
+                // Update citation immediately
+                updateCitation();
+                
+                // Scroll to citation output
+                document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (error) {
+                console.error('Error fetching edition details:', error);
+                // Fallback to search data
+                selectedBook = createBookFromSearchData(doc);
+                updateCitation();
+            }
+        }
+        
+        function createBookFromSearchData(doc) {
+            return {
                 author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
                 title: doc.title || 'Unknown Title',
                 publisher: doc.publisher ? doc.publisher[0] : '',
@@ -429,15 +489,6 @@
                 year: doc.first_publish_year ? doc.first_publish_year.toString() : '',
                 pages: ''
             };
-            
-            // Clear any errors
-            document.getElementById('errorMessage').classList.add('hidden');
-            
-            // Update citation immediately
-            updateCitation();
-            
-            // Scroll to citation output
-            document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
         function toggleManualEntry() {
