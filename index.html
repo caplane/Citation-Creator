@@ -1,1194 +1,553 @@
-
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Citation Generator</title>
-    <meta name="description" content="Enter minimal information and get complete, formatted citations in Chicago, MLA, APA, and more.">
+
+    <title>CiteResolver: Smart Review</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2em;
-        }
-        
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 0.95em;
-        }
-        
-        .input-section {
-            margin-bottom: 25px;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            color: #444;
-            margin-bottom: 8px;
-            font-size: 0.95em;
-        }
-        
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-        
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.95em;
-            background: white;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        button {
-            flex: 1;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            border-radius: 6px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .manual-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-            font-weight: 600;
-        }
-        
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .results-section {
-            margin-top: 30px;
-        }
-        
-        .result-card {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .result-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-        
-        .result-card.selected {
-            border-color: #667eea;
-            background: #e3f2fd;
-        }
-        
-        .result-title {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-            font-size: 1.1em;
-        }
-        
-        .result-meta {
-            color: #666;
-            font-size: 0.9em;
-            line-height: 1.6;
-        }
-        
-        .manual-entry {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        
-        .manual-entry h3 {
-            color: #856404;
-            margin-bottom: 15px;
-        }
-        
-        .manual-entry input {
-            margin-bottom: 10px;
-        }
-        
-        .citation-output {
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 4px;
-            font-family: 'Georgia', serif;
-            line-height: 1.8;
-            font-size: 1em;
-            min-height: 60px;
-        }
 
-        .citation-output.empty {
-            background: #f5f5f5;
-            border-left: 4px solid #999;
-            color: #666;
-            font-style: italic;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1100px; margin: 0 auto; padding: 20px; background: #f5f7fa; color: #333; }
+
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+
+        .header h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
+
+        .version-tag { font-size: 0.5em; color: #888; font-weight: normal; vertical-align: middle; }
+
+        .controls { display: flex; gap: 15px; align-items: center; }
+
+        select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd; font-size: 14px; }
+
+        .note-row { border-bottom: 1px solid #eee; padding: 25px 0; display: grid; grid-template-columns: 40px 1fr 300px; gap: 25px; }
+
+        .note-id { font-weight: bold; color: #adb5bd; font-size: 1.2em; padding-top: 5px; }
+
         
-        .copy-btn {
-            background: #28a745;
-            margin-top: 10px;
-            width: 100%;
-        }
+
+        .editor-container { display: flex; flex-direction: column; gap: 10px; position: relative; }
+
+        .rich-editor { min-height: 60px; padding: 15px; border: 1px solid #ced4da; border-radius: 6px; font-family: "Times New Roman", serif; font-size: 1.15em; line-height: 1.5; background: #fff; transition: all 0.2s; outline: none; }
+
+        .rich-editor:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+
+        .rich-editor em { font-style: italic; background-color: #fff3cd; padding: 0 2px; border-radius: 2px; } 
+
+        /* Show links inside editor */
+
+        .rich-editor a { color: #007bff; text-decoration: underline; cursor: pointer; }
+
         
-        .copy-btn:hover {
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-        }
-        
-        .error {
-            background: #ffebee;
-            border-left: 4px solid #f44336;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 15px 0;
-        }
-        
-        .examples {
-            background: #e3f2fd;
-            border-left: 4px solid #2196F3;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-            font-size: 0.85em;
-        }
-        
-        .examples h3 {
-            color: #1565C0;
-            margin-bottom: 10px;
-            font-size: 1em;
-        }
-        
-        .examples ul {
-            margin-left: 20px;
-            line-height: 1.8;
-        }
 
-        .hidden {
-            display: none;
-        }
+        .actions { display: flex; flex-direction: column; gap: 10px; }
 
-        .format-section {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 2px solid #e9ecef;
-        }
+        .search-wrapper { display: flex; gap: 5px; align-items: stretch; }
 
-        .format-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
+        .search-input { flex-grow: 1; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.95em; color: #495057; transition: 0.2s; }
 
-        .place-editor {
-            background: #fff9e6;
-            border: 2px solid #ffc107;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-        }
+        .search-input:focus { border-color: #007bff; outline: none; }
 
-        .place-editor h4 {
-            color: #856404;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
+        .btn { border: none; border-radius: 4px; cursor: pointer; font-weight: 500; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; }
 
-        .place-editor input {
-            width: calc(100% - 120px);
-            padding: 8px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
+        .btn-primary { background: #007bff; color: white; padding: 10px 16px; width: 100%; }
 
-        .place-editor button {
-            width: 100px;
-            padding: 8px;
-            font-size: 0.9em;
-        }
+        .btn-primary:hover { background: #0056b3; }
+
+        .btn-secondary { background: #6c757d; color: white; padding: 0 12px; }
+
+        .btn-secondary:hover { background: #5a6268; }
+
+        .btn-download { background: #28a745; color: white; padding: 10px 20px; text-decoration: none; font-weight: 600; }
+
+        .btn-download:hover { background: #218838; }
+
+        .results-panel { display: none; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; margin-top: 10px; max-height: 400px; overflow-y: auto; }
+
+        .result-card { padding: 15px; border-bottom: 1px solid #eee; background: white; }
+
+        .result-card:last-child { border-bottom: none; }
+
+        .result-card:hover { background: #f1f3f5; }
+
+        .result-title { font-weight: bold; color: #343a40; display: block; margin-bottom: 4px; font-size: 0.95em; }
+
+        .result-meta { font-size: 0.85em; color: #6c757d; margin-bottom: 10px; }
+
+        .preview-badge { background: #e7f1ff; color: #0056b3; font-size: 0.85em; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; font-family: "Times New Roman", serif; border-left: 3px solid #007bff; line-height: 1.4; }
+
+        .card-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+        .btn-action { padding: 6px 12px; font-size: 0.85em; color: white; border-radius: 4px; border: none; cursor: pointer; }
+
+        .btn-replace { background: #dc3545; }
+
+        .btn-replace:hover { background: #bd2130; }
+
+        .btn-append { background: #28a745; }
+
+        .btn-append:hover { background: #218838; }
+
+        .loader { display: none; color: #6c757d; font-style: italic; font-size: 0.9em; padding: 10px; text-align: center; }
+
+        .save-status { font-size: 0.8em; color: #28a745; opacity: 0; transition: opacity 0.5s; position: absolute; bottom: -20px; right: 0; }
+
+        .upload-box { text-align: center; padding: 80px 20px; border: 2px dashed #dee2e6; border-radius: 8px; margin-top: 20px; }
+
+        .upload-icon { color: #6c757d; margin-bottom: 20px; }
+
     </style>
+
 </head>
+
 <body>
+
     <div class="container">
-        <h1>📚 Smart Citation Generator</h1>
-        <p class="subtitle">Enter author and title to get complete, formatted citations</p>
-        
-        <div class="examples">
-            <h3>How it works:</h3>
-            <ul>
-                <li>Enter author and partial title (e.g., "Eric Caplan Mind")</li>
-                <li>We'll search for complete bibliographic information</li>
-                <li>Select the correct work from search results OR enter manually</li>
-                <li>Add publication place if missing, then choose your citation format!</li>
-            </ul>
-        </div>
-        
-        <div class="input-section">
-            <label for="searchInput">Enter Author and/or Title:</label>
-            <input type="text" id="searchInput" placeholder="e.g., Eric Caplan Mind Games" />
-        </div>
-        
-        <div class="button-group">
-            <button onclick="searchBooks()">🔍 Search for Book</button>
-            <button class="manual-btn" onclick="toggleManualEntry()">✏️ Enter Manually</button>
-        </div>
-        
-        <div id="manualEntry" class="manual-entry hidden">
-            <h3>Manual Entry</h3>
-            <input type="text" id="manualAuthor" placeholder="Author (e.g., Eric Caplan)" />
-            <input type="text" id="manualTitle" placeholder="Full Title" />
-            <input type="text" id="manualPlace" placeholder="Place (e.g., Berkeley)" />
-            <input type="text" id="manualPublisher" placeholder="Publisher (e.g., University of California Press)" />
-            <input type="text" id="manualYear" placeholder="Year (e.g., 1998)" />
-            <input type="text" id="manualPages" placeholder="Page number(s) (optional)" />
-            <button onclick="useManualEntry()">Generate Citation</button>
-        </div>
-        
-        <div id="loadingIndicator" class="hidden">
-            <div class="spinner"></div>
-            <div class="loading">Searching for bibliographic information...</div>
-        </div>
-        
-        <div id="resultsSection" class="results-section hidden">
-            <h3>Select the correct work:</h3>
-            <div id="resultsContainer"></div>
+
+        <div class="header">
+
+            <h1>CiteResolver <span class="version-tag">v8.0</span></h1>
+
+            {% if filename %}
+
+            <div class="controls">
+
+                <label>Format Style:</label>
+
+                <select id="style-selector">
+
+                    <option value="chicago">Chicago (Notes)</option>
+
+                    <option value="mla">MLA</option>
+
+                    <option value="apa">APA</option>
+
+                </select>
+
+                <a href="/download" class="btn btn-download"><i class="fas fa-file-export"></i> Download Document</a>
+
+            </div>
+
+            {% endif %}
+
         </div>
 
-        <div id="errorMessage" class="error hidden"></div>
         
-        <!-- Place editor for missing place data -->
-        <div id="placeEditor" class="place-editor hidden">
-            <h4>📍 Publication place not found. Add it here:</h4>
-            <input type="text" id="placeInput" placeholder="e.g., Cambridge or Berkeley" />
-            <button onclick="updatePlace()">Update</button>
-        </div>
-        
-        <!-- FORMAT SECTION -->
-        <div class="format-section">
-            <h3>📝 Citation Format & Output</h3>
-            
-            <div class="input-section">
-                <label for="formatSelect">Select Citation Format:</label>
-                <select id="formatSelect" onchange="updateCitation()">
-                    <option value="chicago">Chicago Manual of Style</option>
-                    <option value="mla">MLA Format</option>
-                    <option value="apa">APA Style</option>
-                    <option value="bluebook">Bluebook Legal</option>
-                    <option value="turabian">Turabian</option>
-                </select>
+
+        {% if not filename %}
+
+        <form action="/upload" method="post" enctype="multipart/form-data" class="upload-box">
+
+            <div class="upload-icon">
+
+                <i class="fas fa-file-word fa-4x"></i>
+
             </div>
-            
-            <div id="citationOutput" class="citation-output empty">
-                Select a book from search results or enter manually to generate a citation.
-            </div>
-            <button class="copy-btn" onclick="copyCitation()" id="copyBtn">📋 Copy Citation</button>
+
+            <h3 style="margin-bottom: 10px;">Upload Manuscript</h3>
+
+            <p style="color: #666; margin-bottom: 25px;">Select a .docx file to begin reviewing citations</p>
+
+            <input type="file" name="file" accept=".docx" required style="margin-bottom: 20px;">
+
+            <br>
+
+            <button type="submit" class="btn btn-primary" style="width: auto; padding: 12px 40px;">Start Review</button>
+
+        </form>
+
+        {% else %}
+
+
+
+        <div id="notes-list">
+
+            <div style="padding: 40px; text-align: center; color: #666;">Loading notes...</div>
+
         </div>
-    </div>
-    
-    <script>
-        let selectedBook = null;
-        
-        // Comprehensive mapping of publishers to their publication places
-        const publisherPlaceMap = {
-            // === US UNIVERSITY PRESSES ===
-            'Harvard University Press': 'Cambridge',
-            'MIT Press': 'Cambridge',
-            'Yale University Press': 'New Haven',
-            'Princeton University Press': 'Princeton',
-            'Stanford University Press': 'Stanford',
-            'University of California Press': 'Berkeley',
-            'University of Chicago Press': 'Chicago',
-            'Columbia University Press': 'New York',
-            'Cornell University Press': 'Ithaca',
-            'Duke University Press': 'Durham',
-            'Johns Hopkins University Press': 'Baltimore',
-            'University of Pennsylvania Press': 'Philadelphia',
-            'University of Michigan Press': 'Ann Arbor',
-            'Northwestern University Press': 'Evanston',
-            'Indiana University Press': 'Bloomington',
-            'University of Minnesota Press': 'Minneapolis',
-            'University of Texas Press': 'Austin',
-            'University of North Carolina Press': 'Chapel Hill',
-            'University of Wisconsin Press': 'Madison',
-            'University of Illinois Press': 'Urbana',
-            'University of Washington Press': 'Seattle',
-            'University of Virginia Press': 'Charlottesville',
-            'New York University Press': 'New York',
-            'Oxford University Press': 'Oxford',
-            'Cambridge University Press': 'Cambridge',
-            'Rutgers University Press': 'New Brunswick',
-            'Temple University Press': 'Philadelphia',
-            'University of Georgia Press': 'Athens',
-            'University of Pittsburgh Press': 'Pittsburgh',
-            'University of Nebraska Press': 'Lincoln',
-            'University of Oklahoma Press': 'Norman',
-            'University of Tennessee Press': 'Knoxville',
-            'Louisiana State University Press': 'Baton Rouge',
-            'University of Massachusetts Press': 'Amherst',
-            'University of Iowa Press': 'Iowa City',
-            'University of Missouri Press': 'Columbia',
-            'Ohio State University Press': 'Columbus',
-            'Southern Illinois University Press': 'Carbondale',
-            'Syracuse University Press': 'Syracuse',
-            'Vanderbilt University Press': 'Nashville',
-            'University of Alabama Press': 'Tuscaloosa',
-            'University of Arizona Press': 'Tucson',
-            'University of Arkansas Press': 'Fayetteville',
-            'University of Hawaii Press': 'Honolulu',
-            'University of New Mexico Press': 'Albuquerque',
-            'University of South Carolina Press': 'Columbia',
-            'University of Utah Press': 'Salt Lake City',
-            'West Virginia University Press': 'Morgantown',
+
+
+
+        <script>
+
+            const PUBLISHER_MAP = {{ publisher_map | tojson }};
+
             
-            // === THE BIG FIVE & MAJOR IMPRINTS (US) ===
-            // Penguin Random House and imprints
-            'Penguin Random House': 'New York',
-            'Penguin': 'New York',
-            'Random House': 'New York',
-            'Knopf': 'New York',
-            'Alfred A. Knopf': 'New York',
-            'Doubleday': 'New York',
-            'Crown': 'New York',
-            'Viking': 'New York',
-            'Putnam': 'New York',
-            'Dutton': 'New York',
-            'Riverhead Books': 'New York',
-            'Dial Press': 'New York',
-            'Ballantine Books': 'New York',
-            'Del Rey': 'New York',
-            'Bantam': 'New York',
-            'Bantam Books': 'New York',
-            'Dell': 'New York',
-            'Vintage': 'New York',
-            'Anchor Books': 'New York',
-            'Pantheon': 'New York',
-            'Pantheon Books': 'New York',
-            'Schocken Books': 'New York',
-            'Modern Library': 'New York',
-            'DK': 'New York',
-            'Fodor\'s Travel': 'New York',
-            'Penguin Classics': 'New York',
-            'Berkley': 'New York',
-            'Ace Books': 'New York',
-            'DAW Books': 'New York',
-            'TarcherPerigee': 'New York',
-            
-            // HarperCollins and imprints
-            'HarperCollins': 'New York',
-            'Harper': 'New York',
-            'HarperPerennial': 'New York',
-            'Ecco': 'New York',
-            'William Morrow': 'New York',
-            'Avon': 'New York',
-            'Harper Voyager': 'New York',
-            'Harper Business': 'New York',
-            'Amistad': 'New York',
-            'Regan Arts': 'New York',
-            'Harvest Books': 'New York',
-            'Fourth Estate': 'London',
-            
-            // Simon & Schuster and imprints
-            'Simon & Schuster': 'New York',
-            'Scribner': 'New York',
-            'Atria Books': 'New York',
-            'Gallery Books': 'New York',
-            'Pocket Books': 'New York',
-            'Threshold Editions': 'New York',
-            'Touchstone': 'New York',
-            'Free Press': 'New York',
-            'Howard Books': 'New York',
-            
-            // Hachette Book Group and imprints
-            'Hachette': 'New York',
-            'Hachette Book Group': 'New York',
-            'Little, Brown and Company': 'New York',
-            'Grand Central Publishing': 'New York',
-            'Orbit': 'New York',
-            'Yen Press': 'New York',
-            'Mulholland Books': 'New York',
-            'Back Bay Books': 'New York',
-            'FaithWords': 'New York',
-            'Center Street': 'New York',
-            
-            // Macmillan and imprints
-            'Macmillan': 'New York',
-            'Farrar, Straus and Giroux': 'New York',
-            'FSG': 'New York',
-            'Henry Holt and Company': 'New York',
-            'Henry Holt': 'New York',
-            'Picador': 'New York',
-            'St. Martin\'s Press': 'New York',
-            'Tor Books': 'New York',
-            'Forge Books': 'New York',
-            'Flatiron Books': 'New York',
-            'Celadon Books': 'New York',
-            'Metropolitan Books': 'New York',
-            'Hill and Wang': 'New York',
-            'MCD': 'New York',
-            'Graywolf Press': 'Minneapolis',
-            
-            // === MAJOR INDEPENDENT PUBLISHERS (US) ===
-            'W. W. Norton': 'New York',
-            'W.W. Norton': 'New York',
-            'Norton': 'New York',
-            'Basic Books': 'New York',
-            'Houghton Mifflin Harcourt': 'Boston',
-            'Houghton Mifflin': 'Boston',
-            'Mariner Books': 'Boston',
-            'Scholastic': 'New York',
-            'Wiley': 'Hoboken',
-            'John Wiley & Sons': 'Hoboken',
-            'Bloomsbury': 'New York',
-            'Bloomsbury USA': 'New York',
-            'Grove Press': 'New York',
-            'Grove Atlantic': 'New York',
-            'The New Press': 'New York',
-            'Verso': 'London',
-            'Verso Books': 'London',
-            'Haymarket Books': 'Chicago',
-            'City Lights': 'San Francisco',
-            'City Lights Books': 'San Francisco',
-            'New Directions': 'New York',
-            'Counterpoint': 'Berkeley',
-            'Counterpoint Press': 'Berkeley',
-            'Soft Skull Press': 'Berkeley',
-            'Melville House': 'Brooklyn',
-            'Akashic Books': 'Brooklyn',
-            'Seven Stories Press': 'New York',
-            'Europa Editions': 'New York',
-            'Soho Press': 'New York',
-            'Tin House Books': 'Portland',
-            'Coffee House Press': 'Minneapolis',
-            'Milkweed Editions': 'Minneapolis',
-            'Dalkey Archive Press': 'Champaign',
-            'New York Review Books': 'New York',
-            'NYRB Classics': 'New York',
-            
-            // === GENRE & SPECIALTY PUBLISHERS (US) ===
-            'Abrams': 'New York',
-            'Harry N. Abrams': 'New York',
-            'Chronicle Books': 'San Francisco',
-            'Workman Publishing': 'New York',
-            'Algonquin Books': 'Chapel Hill',
-            'Algonquin': 'Chapel Hill',
-            'Beacon Press': 'Boston',
-            'Bellevue Literary Press': 'New York',
-            'Black Balloon Publishing': 'Brooklyn',
-            'Catapult': 'New York',
-            'Copper Canyon Press': 'Port Townsend',
-            'Dzanc Books': 'Ann Arbor',
-            'Feminist Press': 'New York',
-            'Graywolf': 'Minneapolis',
-            'Haymarket': 'Chicago',
-            'McSweeney\'s': 'San Francisco',
-            'O Books': 'Winchester',
-            'Penguin Workshop': 'New York',
-            'Phaidon': 'New York',
-            'Quirk Books': 'Philadelphia',
-            'Rizzoli': 'New York',
-            'Seal Press': 'Berkeley',
-            'Taschen': 'Los Angeles',
-            'Ten Speed Press': 'Berkeley',
-            'Tuttle Publishing': 'Boston',
-            'Two Dollar Radio': 'Columbus',
-            'Ugly Duckling Presse': 'Brooklyn',
-            'Unnamed Press': 'Los Angeles',
-            
-            // === RELIGIOUS PUBLISHERS (US) ===
-            'Zondervan': 'Grand Rapids',
-            'InterVarsity Press': 'Downers Grove',
-            'IVP': 'Downers Grove',
-            'Eerdmans': 'Grand Rapids',
-            'William B. Eerdmans': 'Grand Rapids',
-            'Baker Books': 'Grand Rapids',
-            'Brazos Press': 'Grand Rapids',
-            'Fortress Press': 'Minneapolis',
-            'Westminster John Knox': 'Louisville',
-            'Augsburg Fortress': 'Minneapolis',
-            'Liturgical Press': 'Collegeville',
-            'Paulist Press': 'Mahwah',
-            
-            // === CANADIAN PUBLISHERS ===
-            'McClelland & Stewart': 'Toronto',
-            'House of Anansi Press': 'Toronto',
-            'Anansi': 'Toronto',
-            'Coach House Books': 'Toronto',
-            'ECW Press': 'Toronto',
-            'Dundurn Press': 'Toronto',
-            'Goose Lane Editions': 'Fredericton',
-            'Talonbooks': 'Vancouver',
-            'Arsenal Pulp Press': 'Vancouver',
-            'Douglas & McIntyre': 'Vancouver',
-            'Greystone Books': 'Vancouver',
-            'New Star Books': 'Vancouver',
-            'Nightwood Editions': 'Gibsons',
-            'Penguin Canada': 'Toronto',
-            'Random House Canada': 'Toronto',
-            'HarperCollins Canada': 'Toronto',
-            'University of Toronto Press': 'Toronto',
-            'McGill-Queen\'s University Press': 'Montreal',
-            'University of British Columbia Press': 'Vancouver',
-            'University of Alberta Press': 'Edmonton',
-            'University of Calgary Press': 'Calgary',
-            'University of Manitoba Press': 'Winnipeg',
-            'Wilfrid Laurier University Press': 'Waterloo',
-            'University of Ottawa Press': 'Ottawa',
-            'Between the Lines': 'Toronto',
-            'Broadview Press': 'Peterborough',
-            'James Lorimer & Company': 'Toronto',
-            'Wolsak and Wynn': 'Hamilton',
-            'BookThug': 'Toronto',
-            'Biblioasis': 'Windsor',
-            'Caitlin Press': 'Prince George',
-            
-            // === UK PUBLISHERS ===
-            // Major UK Publishers
-            'Penguin UK': 'London',
-            'Penguin Books': 'London',
-            'Jonathan Cape': 'London',
-            'Chatto & Windus': 'London',
-            'The Bodley Head': 'London',
-            'Harvill Secker': 'London',
-            'Hutchinson': 'London',
-            'Century': 'London',
-            'William Heinemann': 'London',
-            'Hamish Hamilton': 'London',
-            'Fig Tree': 'London',
-            'Viking UK': 'London',
-            
-            'HarperCollins UK': 'London',
-            'Fourth Estate': 'London',
-            'The Borough Press': 'London',
-            'William Collins': 'London',
-            
-            'Faber & Faber': 'London',
-            'Faber and Faber': 'London',
-            'Faber': 'London',
-            
-            'Bloomsbury Publishing': 'London',
-            'Bloomsbury UK': 'London',
-            
-            'Pan Macmillan': 'London',
-            'Picador UK': 'London',
-            'Mantle': 'London',
-            
-            'Hachette UK': 'London',
-            'John Murray': 'London',
-            'Hodder & Stoughton': 'London',
-            'Orion Publishing': 'London',
-            'Weidenfeld & Nicolson': 'London',
-            
-            'Granta Books': 'London',
-            'Granta': 'London',
-            'Atlantic Books': 'London',
-            'Canongate': 'Edinburgh',
-            'Canongate Books': 'Edinburgh',
-            'Serpent\'s Tail': 'London',
-            'Profile Books': 'London',
-            'Pushkin Press': 'London',
-            'Oneworld': 'London',
-            'Oneworld Publications': 'London',
-            'Head of Zeus': 'London',
-            'Salt Publishing': 'Cromer',
-            'Carcanet': 'Manchester',
-            'Bloodaxe Books': 'Hexham',
-            'Comma Press': 'Manchester',
-            'Peepal Tree Press': 'Leeds',
-            'Shearsman Books': 'Bristol',
-            'CB Editions': 'London',
-            'Fitzcarraldo Editions': 'London',
-            'Galley Beggar Press': 'Norwich',
-            'And Other Stories': 'Sheffield',
-            'Influx Press': 'London',
-            'Peirene Press': 'London',
-            'Tilted Axis Press': 'London',
-            
-            // UK Academic
-            'Polity': 'Cambridge',
-            'Polity Press': 'Cambridge',
-            'Palgrave Macmillan': 'London',
-            'Palgrave': 'London',
-            'Sage Publications': 'London',
-            'Sage': 'London',
-            'Routledge': 'London',
-            'Taylor & Francis': 'London',
-            'Zed Books': 'London',
-            'Pluto Press': 'London',
-            'I.B. Tauris': 'London',
-            'Reaktion Books': 'London',
-            
-            // === MID-LEVEL & SPECIALTY (US) ===
-            'Academy Chicago': 'Chicago',
-            'Akashic': 'Brooklyn',
-            'Arcade Publishing': 'New York',
-            'Archipelago Books': 'Brooklyn',
-            'Artisan Books': 'New York',
-            'Belknap Press': 'Cambridge',
-            'Black Sparrow Books': 'Boston',
-            'BookBaby': 'Pennsauken',
-            'Burning Deck Press': 'Providence',
-            'Byliner': 'San Francisco',
-            'Candlewick Press': 'Somerville',
-            'Charlesbridge': 'Watertown',
-            'Chelsea Green': 'White River Junction',
-            'Cleis Press': 'Jersey City',
-            'Coffeetown Press': 'Seattle',
-            'Counterpath': 'Denver',
-            'Drawn and Quarterly': 'Montreal',
-            'Duke University Press': 'Durham',
-            'Enchanted Lion Books': 'Brooklyn',
-            'Fairview Press': 'Minneapolis',
-            'Flying Eye Books': 'London',
-            'Gallaudet University Press': 'Washington',
-            'Gibbs Smith': 'Layton',
-            'Godine': 'Boston',
-            'David R. Godine': 'Boston',
-            'Graywolf': 'Minneapolis',
-            'Green Integer': 'Los Angeles',
-            'Hanging Loose Press': 'Brooklyn',
-            'Hawthorne Books': 'Portland',
-            'Heyday': 'Berkeley',
-            'Holy Cow! Press': 'Duluth',
-            'Host Publications': 'Austin',
-            'Ig Publishing': 'Brooklyn',
-            'Iron Press': 'Culver City',
-            'Kaya Press': 'Los Angeles',
-            'Kelsey Street Press': 'Berkeley',
-            'Knopf': 'New York',
-            'Liveright': 'New York',
-            'Liveright Publishing': 'New York',
-            'Mad Creek Books': 'Columbus',
-            'McPherson & Company': 'Kingston',
-            'Midnight Marquee Press': 'Baltimore',
-            'Moon City Press': 'Springfield',
-            'Nightboat Books': 'Brooklyn',
-            'Northwestern University Press': 'Evanston',
-            'Other Press': 'New York',
-            'Overlook Press': 'New York',
-            'The Overlook Press': 'New York',
-            'Persea Books': 'New York',
-            'Persea': 'New York',
-            'Red Hen Press': 'Pasadena',
-            'Roaring Brook Press': 'New York',
-            'Sarabande Books': 'Louisville',
-            'Shambhala': 'Boulder',
-            'Steerforth Press': 'Lebanon',
-            'Subterranean Press': 'Burton',
-            'Tachyon Publications': 'San Francisco',
-            'Transit Books': 'Oakland',
-            'Tupelo Press': 'North Adams',
-            'Two Lines Press': 'San Francisco',
-            'Wave Books': 'Seattle',
-            'Wesleyan University Press': 'Middletown',
-            'White Pine Press': 'Buffalo',
-            'Yaddo': 'Saratoga Springs',
-            'Zephyr Press': 'Brookline'
-        };
-        
-        function inferPlaceFromPublisher(publisher) {
-            if (!publisher) return '';
-            
-            // Normalize publisher name for comparison
-            const normalizedPublisher = publisher.trim();
-            
-            // Try exact match first
-            if (publisherPlaceMap[normalizedPublisher]) {
-                return publisherPlaceMap[normalizedPublisher];
-            }
-            
-            // Try partial match - check if publisher contains any known publisher name
-            for (const [pub, place] of Object.entries(publisherPlaceMap)) {
-                // Check if the publisher name contains the key or vice versa
-                if (normalizedPublisher.toLowerCase().includes(pub.toLowerCase()) || 
-                    pub.toLowerCase().includes(normalizedPublisher.toLowerCase())) {
-                    return place;
-                }
-            }
-            
-            return '';
-        }
-        
-        async function searchBooks() {
-            const query = document.getElementById('searchInput').value.trim();
-            
-            if (!query) {
-                showError('Please enter a search term');
-                return;
-            }
-            
-            // Show loading
-            document.getElementById('loadingIndicator').classList.remove('hidden');
-            document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('errorMessage').classList.add('hidden');
-            document.getElementById('placeEditor').classList.add('hidden');
-            
-            try {
-                const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,publisher,publish_place,publish_year,publish_date,edition_key,isbn,language&limit=5`);
+
+            fetch('/get_notes').then(r => r.json()).then(data => {
+
+                const container = document.getElementById('notes-list');
+
+                container.innerHTML = ''; 
+
                 
-                if (!response.ok) {
-                    throw new Error('API request failed');
-                }
-                
-                const data = await response.json();
-                
-                document.getElementById('loadingIndicator').classList.add('hidden');
-                
-                if (!data.docs || data.docs.length === 0) {
-                    showError('No results found. Try different search terms or use Manual Entry.');
+
+                if (data.notes.length === 0) {
+
+                    container.innerHTML = '<div style="padding:20px; text-align:center;">No endnotes found in this document.</div>';
+
                     return;
+
                 }
-                
-                displayResults(data.docs);
-            } catch (error) {
-                document.getElementById('loadingIndicator').classList.add('hidden');
-                showError('Search failed. Please try Manual Entry or check your connection.');
-                console.error('Search error:', error);
-            }
-        }
-        
-        function displayResults(docs) {
-            const container = document.getElementById('resultsContainer');
-            container.innerHTML = '';
-            
-            docs.forEach((doc, index) => {
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                card.onclick = () => selectBook(doc, card);
-                
-                let authors = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
-                let title = doc.title || 'Unknown Title';
-                let publisher = doc.publisher ? doc.publisher[0] : 'Unknown Publisher';
-                let year = doc.first_publish_year || 'Unknown Year';
-                let place = doc.publish_place ? doc.publish_place[0] : '';
-                
-                card.innerHTML = `
-                    <div class="result-title">${title}</div>
-                    <div class="result-meta">
-                        <strong>Author:</strong> ${authors}<br>
-                        <strong>Publisher:</strong> ${publisher}${place ? ' (' + place + ')' : ''}<br>
-                        <strong>Year:</strong> ${year}
-                    </div>
-                `;
-                
-                card.dataset.docData = JSON.stringify(doc);
-                container.appendChild(card);
+
+
+
+                data.notes.forEach(note => {
+
+                    const div = document.createElement('div');
+
+                    div.className = 'note-row';
+
+                    div.innerHTML = `
+
+                        <div class="note-id">${note.id}</div>
+
+                        <div class="editor-container">
+
+                            <div class="rich-editor" id="editor-${note.id}" contenteditable="true" 
+
+                                 onblur="saveNote('${note.id}')">${note.html}</div>
+
+                            <div class="save-status" id="status-${note.id}"><i class="fas fa-check"></i> Saved</div>
+
+                        </div>
+
+                        <div class="actions">
+
+                            <div class="search-wrapper">
+
+                                <input type="text" class="search-input" id="query-${note.id}" 
+
+                                       value="${note.clean_term}" placeholder="Search Book or URL..."
+
+                                       onkeypress="if(event.key === 'Enter') searchCitation('${note.id}')">
+
+                                <button class="btn btn-secondary" onclick="clearQuery('${note.id}')" title="Clear Search">
+
+                                    <i class="fas fa-times"></i>
+
+                                </button>
+
+                            </div>
+
+                            <button class="btn btn-primary" onclick="searchCitation('${note.id}')">
+
+                                <i class="fas fa-search"></i> Find Source
+
+                            </button>
+
+                            <div class="loader" id="loader-${note.id}">
+
+                                <i class="fas fa-spinner fa-spin"></i> Searching libraries...
+
+                            </div>
+
+                            <div class="results-panel" id="results-${note.id}"></div>
+
+                        </div>
+
+                    `;
+
+                    container.appendChild(div);
+
+                });
+
             });
-            
-            document.getElementById('resultsSection').classList.remove('hidden');
-        }
-        
-        async function selectBook(doc, cardElement) {
-            document.querySelectorAll('.result-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            cardElement.classList.add('selected');
-            
-            const outputBox = document.getElementById('citationOutput');
-            outputBox.innerHTML = 'Fetching complete bibliographic data...';
-            outputBox.classList.add('empty');
-            
-            try {
-                selectedBook = await fetchCompleteBookData(doc);
-                
-                // Check if we need to show the place editor
-                if (!selectedBook.place) {
-                    document.getElementById('placeEditor').classList.remove('hidden');
-                    document.getElementById('placeInput').value = '';
-                } else {
-                    document.getElementById('placeEditor').classList.add('hidden');
-                }
-                
-                document.getElementById('errorMessage').classList.add('hidden');
-                updateCitation();
-                document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                
-            } catch (error) {
-                console.error('Error fetching book details:', error);
-                selectedBook = createBookFromSearchData(doc);
-                updateCitation();
+
+
+
+            function clearQuery(id) {
+
+                const input = document.getElementById(`query-${id}`);
+
+                input.value = '';
+
+                input.focus();
+
             }
-        }
-        
-        async function fetchCompleteBookData(doc) {
-            let bookData = {
-                author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
-                title: doc.title || 'Unknown Title',
-                publisher: '',
-                place: '',
-                year: '',
-                pages: ''
-            };
-            
-            // Try to get data from editions
-            if (doc.edition_key && doc.edition_key.length > 0) {
-                try {
-                    for (let i = 0; i < Math.min(3, doc.edition_key.length); i++) {
-                        const editionKey = doc.edition_key[i];
-                        const editionResponse = await fetch(`https://openlibrary.org/books/${editionKey}.json`);
-                        
-                        if (editionResponse.ok) {
-                            const editionData = await editionResponse.json();
-                            
-                            if (editionData.title) bookData.title = editionData.title;
-                            if (editionData.publishers && editionData.publishers.length > 0) {
-                                bookData.publisher = editionData.publishers[0];
-                            }
-                            if (editionData.publish_places && editionData.publish_places.length > 0) {
-                                bookData.place = editionData.publish_places[0];
-                            }
-                            if (editionData.publish_date) bookData.year = editionData.publish_date;
-                            
-                            if (bookData.publisher && bookData.place) break;
-                        }
+
+
+
+            function searchCitation(id) {
+
+                const query = document.getElementById(`query-${id}`).value;
+
+                if (!query.trim()) return;
+
+
+
+                const loader = document.getElementById(`loader-${id}`);
+
+                const panel = document.getElementById(`results-${id}`);
+
+                
+
+                loader.style.display = 'block';
+
+                panel.style.display = 'none';
+
+                panel.innerHTML = '';
+
+
+
+                fetch('/search_book', {
+
+                    method: 'POST',
+
+                    headers: {'Content-Type': 'application/json'},
+
+                    body: JSON.stringify({query: query})
+
+                })
+
+                .then(r => r.json())
+
+                .then(data => {
+
+                    loader.style.display = 'none';
+
+                    panel.style.display = 'block';
+
+                    
+
+                    if (data.items.length === 0) {
+
+                        panel.innerHTML = '<div style="padding:15px; color:#666; text-align:center; font-style:italic;">No matching books/websites found.</div>';
+
+                        return;
+
                     }
-                } catch (error) {
-                    console.error('Error fetching edition details:', error);
-                }
+
+
+
+                    data.items.forEach(item => {
+
+                        if (!item.city && PUBLISHER_MAP[item.publisher]) {
+
+                            item.city = PUBLISHER_MAP[item.publisher];
+
+                        }
+
+
+
+                        const style = document.getElementById('style-selector').value;
+
+                        const citationHTML = formatCitation(item, style);
+
+                        const citationEncoded = encodeURIComponent(citationHTML);
+
+                        
+
+                        let icon = '<i class="fas fa-book"></i>';
+
+                        if (item.type === 'gov') icon = '<i class="fas fa-landmark"></i>';
+
+                        else if (item.type === 'web') icon = '<i class="fas fa-globe"></i>';
+
+                        
+
+                        // Meta: Show Short Link if available, else Domain, else Book info
+
+                        let meta = item.authors.join(', ') + ' (' + item.year + ')';
+
+                        if (item.type === 'web' || item.type === 'gov') {
+
+                            meta = item.short_link ? item.short_link : item.domain; 
+
+                        }
+
+
+
+                        const card = document.createElement('div');
+
+                        card.className = 'result-card';
+
+                        card.innerHTML = `
+
+                            <span class="result-title">${icon} ${item.title}</span>
+
+                            <div class="result-meta">${meta}</div>
+
+                            <div class="preview-badge">${citationHTML}</div>
+
+                            <div class="card-actions">
+
+                                <button class="btn-action btn-replace" onclick="applyCitation('${id}', '${citationEncoded}', 'replace')">Replace</button>
+
+                                <button class="btn-action btn-append" onclick="applyCitation('${id}', '${citationEncoded}', 'append')">+ Append</button>
+
+                            </div>
+
+                        `;
+
+                        panel.appendChild(card);
+
+                    });
+
+                });
+
             }
-            
-            // Use search data if not found in editions
-            if (!bookData.publisher && doc.publisher && doc.publisher.length > 0) {
-                bookData.publisher = doc.publisher[0];
-            }
-            if (!bookData.place && doc.publish_place && doc.publish_place.length > 0) {
-                bookData.place = doc.publish_place[0];
-            }
-            if (!bookData.year) {
-                if (doc.publish_year && doc.publish_year.length > 0) {
-                    bookData.year = doc.publish_year[0].toString();
-                } else if (doc.first_publish_year) {
-                    bookData.year = doc.first_publish_year.toString();
-                }
-            }
-            
-            // If place is still missing, try to infer from publisher
-            if (!bookData.place && bookData.publisher) {
-                const inferredPlace = inferPlaceFromPublisher(bookData.publisher);
-                if (inferredPlace) {
-                    bookData.place = inferredPlace;
-                }
-            }
-            
-            return bookData;
-        }
-        
-        function createBookFromSearchData(doc) {
-            return {
-                author: doc.author_name ? doc.author_name[0] : 'Unknown Author',
-                title: doc.title || 'Unknown Title',
-                publisher: doc.publisher ? doc.publisher[0] : '',
-                place: doc.publish_place ? doc.publish_place[0] : '',
-                year: doc.first_publish_year ? doc.first_publish_year.toString() : '',
-                pages: ''
-            };
-        }
-        
-        function updatePlace() {
-            const place = document.getElementById('placeInput').value.trim();
-            if (place && selectedBook) {
-                selectedBook.place = place;
-                document.getElementById('placeEditor').classList.add('hidden');
-                updateCitation();
-            }
-        }
-        
-        function toggleManualEntry() {
-            const manualEntry = document.getElementById('manualEntry');
-            manualEntry.classList.toggle('hidden');
-        }
-        
-        function useManualEntry() {
-            const author = document.getElementById('manualAuthor').value.trim();
-            const title = document.getElementById('manualTitle').value.trim();
-            
-            if (!author || !title) {
-                showError('Please enter at least Author and Title');
-                return;
-            }
-            
-            selectedBook = {
-                author: author,
-                title: title,
-                place: document.getElementById('manualPlace').value.trim(),
-                publisher: document.getElementById('manualPublisher').value.trim(),
-                year: document.getElementById('manualYear').value.trim(),
-                pages: document.getElementById('manualPages').value.trim()
-            };
-            
-            document.getElementById('errorMessage').classList.add('hidden');
-            document.getElementById('placeEditor').classList.add('hidden');
-            updateCitation();
-            document.getElementById('citationOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        function updateCitation() {
-            if (!selectedBook) {
-                const outputBox = document.getElementById('citationOutput');
-                outputBox.innerHTML = 'Select a book from search results or enter manually to generate a citation.';
-                outputBox.classList.add('empty');
-                return;
-            }
-            
-            const format = document.getElementById('formatSelect').value;
-            let citation = '';
-            
-            try {
-                switch(format) {
-                    case 'chicago':
-                        citation = formatChicago(selectedBook);
-                        break;
-                    case 'mla':
-                        citation = formatMLA(selectedBook);
-                        break;
-                    case 'apa':
-                        citation = formatAPA(selectedBook);
-                        break;
-                    case 'bluebook':
-                        citation = formatBluebook(selectedBook);
-                        break;
-                    case 'turabian':
-                        citation = formatTurabian(selectedBook);
-                        break;
-                    default:
-                        citation = formatChicago(selectedBook);
-                }
+
+
+
+            function formatCitation(item, style) {
+
+                let citation = "";
+
                 
-                const outputBox = document.getElementById('citationOutput');
-                outputBox.innerHTML = citation;
-                outputBox.classList.remove('empty');
-            } catch (error) {
-                console.error('Citation generation error:', error);
-                showError('Error generating citation. Please check your input.');
-            }
-        }
-        
-        function formatChicago(book) {
-            let citation = book.author + ', <em>' + book.title + '</em>';
-            
-            if (book.place || book.publisher || book.year) {
-                citation += ' (';
-                if (book.place) {
-                    citation += book.place;
-                    if (book.publisher || book.year) citation += ': ';
+
+                // === WEB / GOV CITATION ===
+
+                if (item.type === 'web' || item.type === 'gov') {
+
+                    let authorPrefix = item.type === 'gov' ? "U.S. Government, " : "";
+
+                    
+
+                    // Prefer Short Link, then Fallback to URL/Domain
+
+                    const displayUrl = item.short_link || item.url;
+
+                    const link = `<a href="${item.url}">${displayUrl}</a>`;
+
+
+
+                    if (style === 'chicago') {
+
+                        citation = `${authorPrefix}"${item.title}," accessed ${item.access_date}, ${link}.`;
+
+                    } else if (style === 'mla') {
+
+                        citation = `${authorPrefix}"${item.title}." <em>Web</em>. ${item.access_date} &lt;${link}&gt;.`;
+
+                    } else if (style === 'apa') {
+
+                        citation = `${authorPrefix}${item.title}. Retrieved ${item.access_date}, from ${link}`;
+
+                    }
+
+                    return citation;
+
                 }
-                if (book.publisher) {
-                    citation += book.publisher;
-                    if (book.year) citation += ', ';
+
+
+
+                // === BOOK CITATION ===
+
+                const authors = item.authors.join(', ');
+
+                if (style === 'chicago') {
+
+                    citation = `${authors}, <em>${item.title}</em>`;
+
+                    let pubParts = [];
+
+                    if (item.city) pubParts.push(item.city);
+
+                    if (item.publisher) pubParts.push(item.publisher);
+
+                    if (item.year) pubParts.push(item.year);
+
+                    if (pubParts.length > 0) citation += ` (${pubParts.join(': ')})`;
+
+                    citation += ".";
+
+                } 
+
+                else if (style === 'mla') {
+
+                    citation = `${authors}. <em>${item.title}</em>. ${item.publisher}, ${item.year}.`;
+
                 }
-                if (book.year) citation += book.year;
-                citation += ')';
-            }
-            
-            if (book.pages) citation += ', ' + book.pages;
-            citation += '.';
-            return citation;
-        }
-        
-        function formatMLA(book) {
-            const authorParts = book.author.split(' ');
-            let citation = '';
-            
-            if (authorParts.length >= 2) {
-                citation = authorParts[authorParts.length - 1] + ', ' + authorParts.slice(0, -1).join(' ');
-            } else {
-                citation = book.author;
-            }
-            
-            citation += '. <em>' + book.title + '</em>';
-            if (book.publisher) citation += '. ' + book.publisher;
-            if (book.year) citation += ', ' + book.year;
-            if (book.pages) citation += ', pp. ' + book.pages;
-            citation += '.';
-            return citation;
-        }
-        
-        function formatAPA(book) {
-            const authorParts = book.author.split(' ');
-            let citation = '';
-            
-            if (authorParts.length >= 2) {
-                citation = authorParts[authorParts.length - 1] + ', ';
-                for (let i = 0; i < authorParts.length - 1; i++) {
-                    citation += authorParts[i].charAt(0) + '. ';
+
+                else if (style === 'apa') {
+
+                    citation = `${authors} (${item.year}). <em>${item.title}</em>. ${item.publisher}.`;
+
                 }
-            } else {
-                citation = book.author;
+
+                return citation;
+
             }
-            
-            if (book.year) citation += '(' + book.year + '). ';
-            citation += '<em>' + book.title + '</em>';
-            
-            if (book.place && book.publisher) {
-                citation += '. ' + book.place + ': ' + book.publisher;
-            } else if (book.publisher) {
-                citation += '. ' + book.publisher;
-            }
-            
-            if (book.pages) citation += ', pp. ' + book.pages;
-            citation += '.';
-            return citation;
-        }
-        
-        function formatBluebook(book) {
-            let citation = book.author + ', ';
-            citation += book.title.toUpperCase();
-            if (book.pages) citation += ' ' + book.pages;
-            
-            if (book.publisher || book.year) {
-                citation += ' (';
-                if (book.publisher) citation += book.publisher;
-                if (book.publisher && book.year) citation += ' ';
-                if (book.year) citation += book.year;
-                citation += ')';
-            }
-            
-            citation += '.';
-            return citation;
-        }
-        
-        function formatTurabian(book) {
-            return formatChicago(book);
-        }
-        
-        function copyCitation() {
-            const outputBox = document.getElementById('citationOutput');
-            
-            if (!selectedBook || outputBox.classList.contains('empty')) {
-                showError('Please select or enter a book first to generate a citation.');
-                return;
-            }
-            
-            const text = outputBox.innerText;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copyBtn');
-                const originalText = btn.textContent;
-                btn.textContent = '✓ Copied to Clipboard!';
-                btn.style.background = '#218838';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.background = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    alert('Citation copied to clipboard!');
-                } catch (err) {
-                    alert('Failed to copy. Please select and copy manually.');
+
+
+
+            function applyCitation(id, encodedHtml, mode) {
+
+                const newHtml = decodeURIComponent(encodedHtml);
+
+                const editor = document.getElementById(`editor-${id}`);
+
+                
+
+                if (mode === 'replace') {
+
+                    editor.innerHTML = newHtml;
+
+                } else if (mode === 'append') {
+
+                    let currentHtml = editor.innerHTML.trim();
+
+                    const textContent = editor.innerText.trim();
+
+                    let separator = "; ";
+
+                    if (textContent.endsWith('.')) separator = " ";
+
+                    else if (textContent.length === 0) separator = "";
+
+                    editor.innerHTML = currentHtml + separator + newHtml;
+
                 }
-                document.body.removeChild(textArea);
-            });
-        }
-        
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchBooks();
+
+                document.getElementById(`results-${id}`).style.display = 'none';
+
+                saveNote(id);
+
             }
-        });
-    </script>
+
+
+
+            function saveNote(id) {
+
+                const editor = document.getElementById(`editor-${id}`);
+
+                const htmlContent = editor.innerHTML;
+
+                const status = document.getElementById(`status-${id}`);
+
+                fetch('/update_note', {
+
+                    method: 'POST',
+
+                    headers: {'Content-Type': 'application/json'},
+
+                    body: JSON.stringify({id: id, html: htmlContent})
+
+                }).then(() => {
+
+                    status.style.opacity = '1';
+
+                    setTimeout(() => status.style.opacity = '0', 2000);
+
+                });
+
+            }
+
+        </script>
+
+        {% endif %}
+
+    </div>
+
 </body>
+
 </html>
